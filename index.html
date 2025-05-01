@@ -42,6 +42,12 @@
       margin-top: 1.5rem;
     }
 
+    .info-text {
+      font-size: 0.9rem;
+      color: #34495e;
+      margin-top: 1rem;
+    }
+
     @media (max-width: 480px) {
       canvas {
         width: 220px !important;
@@ -56,6 +62,7 @@
   <canvas id="clock" width="300" height="300"></canvas>
   <div class="message" id="message">Loading...</div>
   <div class="countdown-text" id="countdownText"></div>
+  <div class="info-text" id="infoText"></div>
 
   <script>
     const canvas = document.getElementById("clock");
@@ -68,6 +75,76 @@
 
     const messageEl = document.getElementById("message");
     const countdownText = document.getElementById("countdownText");
+    const infoText = document.getElementById("infoText");
+
+    // Draw static "inactive" clock (12:00) before 2:25am
+    function drawStaticClock() {
+      ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
+
+      // Draw clock face
+      ctx.beginPath();
+      ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.strokeStyle = "#ccc";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Draw ticks
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * Math.PI) / 30;
+        const inner = radius - 10;
+        const outer = i % 5 === 0 ? radius - 20 : radius - 15;
+        ctx.beginPath();
+        ctx.moveTo(inner * Math.cos(angle), inner * Math.sin(angle));
+        ctx.lineTo(outer * Math.cos(angle), outer * Math.sin(angle));
+        ctx.strokeStyle = "#888";
+        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
+        ctx.stroke();
+      }
+
+      // Hour hand (static at 12)
+      const hourAngle = 0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(
+        (radius - 80) * Math.cos(hourAngle - Math.PI / 2),
+        (radius - 80) * Math.sin(hourAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#2c3e50";
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // Minute hand (static at 12)
+      const minuteAngle = 0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(
+        (radius - 60) * Math.cos(minuteAngle - Math.PI / 2),
+        (radius - 60) * Math.sin(minuteAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#2980b9";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Second hand (static at 12)
+      const secondAngle = 0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(
+        (radius - 40) * Math.cos(secondAngle - Math.PI / 2),
+        (radius - 40) * Math.sin(secondAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#e74c3c";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#333";
+      ctx.fill();
+    }
 
     function drawClock(hoursLeft, minutesLeft, secondsLeft) {
       ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
@@ -134,7 +211,7 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Center
+      // Center dot
       ctx.beginPath();
       ctx.arc(0, 0, 5, 0, 2 * Math.PI);
       ctx.fillStyle = "#333";
@@ -148,6 +225,7 @@
         canvas.style.display = "none";
         messageEl.textContent = "Countdown begins at 2:25 AM on May 2, 2025";
         countdownText.textContent = "";
+        infoText.textContent = "Clock will start at 2:25 AM";
         return;
       }
 
@@ -155,6 +233,7 @@
         canvas.style.display = "none";
         messageEl.textContent = "Arrived!";
         countdownText.textContent = "";
+        infoText.textContent = "";
         clearInterval(timer);
         return;
       }
@@ -170,7 +249,11 @@
 
       countdownText.textContent = `${hours}h ${minutes}m ${seconds}s`;
 
-      drawClock(hours, minutes, seconds);
+      if (now >= startWindow) {
+        drawClock(hours, minutes, seconds);
+      } else {
+        drawStaticClock();
+      }
     }
 
     const timer = setInterval(updateCountdown, 1000);
