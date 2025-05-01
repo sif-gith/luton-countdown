@@ -32,20 +32,26 @@
       background-color: white;
       border-radius: 50%;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      display: none;
+      margin-top: 1rem;
     }
 
-    .message, .countdown-text {
-      font-size: 1.2rem;
-      color: #e74c3c;
+    .countdown-text {
+      font-size: 1.5rem;
+      color: #e67e22;
       font-weight: bold;
-      margin-top: 1.5rem;
+      margin-top: 1rem;
     }
 
     .info-text {
       font-size: 0.9rem;
       color: #34495e;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .message {
+      font-size: 1.2rem;
+      color: #2c3e50;
+      margin-top: 2rem;
     }
 
     @media (max-width: 480px) {
@@ -59,10 +65,11 @@
 <body>
   <h1>Countdown to Arrival at Luton Airport</h1>
   <h2>Thursday, 2nd May 2025 at 2:24:47 PM</h2>
-  <canvas id="clock" width="300" height="300"></canvas>
-  <div class="message" id="message">Loading...</div>
-  <div class="countdown-text" id="countdownText"></div>
+
+  <div class="countdown-text" id="countdownText">Loading...</div>
   <div class="info-text" id="infoText"></div>
+  <canvas id="clock" width="300" height="300"></canvas>
+  <div class="message" id="message"></div>
 
   <script>
     const canvas = document.getElementById("clock");
@@ -77,141 +84,61 @@
     const countdownText = document.getElementById("countdownText");
     const infoText = document.getElementById("infoText");
 
-    // Draw static "inactive" clock (12:00) before 2:25am
     function drawStaticClock() {
       ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
-
-      // Draw clock face
-      ctx.beginPath();
-      ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      ctx.strokeStyle = "#ccc";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // Draw ticks
-      for (let i = 0; i < 60; i++) {
-        const angle = (i * Math.PI) / 30;
-        const inner = radius - 10;
-        const outer = i % 5 === 0 ? radius - 20 : radius - 15;
-        ctx.beginPath();
-        ctx.moveTo(inner * Math.cos(angle), inner * Math.sin(angle));
-        ctx.lineTo(outer * Math.cos(angle), outer * Math.sin(angle));
-        ctx.strokeStyle = "#888";
-        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
-        ctx.stroke();
-      }
-
-      // Hour hand (static at 12)
-      const hourAngle = 0;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 80) * Math.cos(hourAngle - Math.PI / 2),
-        (radius - 80) * Math.sin(hourAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#2c3e50";
-      ctx.lineWidth = 6;
-      ctx.stroke();
-
-      // Minute hand (static at 12)
-      const minuteAngle = 0;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 60) * Math.cos(minuteAngle - Math.PI / 2),
-        (radius - 60) * Math.sin(minuteAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#2980b9";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // Second hand (static at 12)
-      const secondAngle = 0;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 40) * Math.cos(secondAngle - Math.PI / 2),
-        (radius - 40) * Math.sin(secondAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#e74c3c";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Center dot
-      ctx.beginPath();
-      ctx.arc(0, 0, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = "#333";
-      ctx.fill();
+      drawFace();
+      drawHand(0, radius - 80, 6, "#2c3e50"); // hour
+      drawHand(0, radius - 60, 4, "#2980b9"); // minute
+      drawHand(0, radius - 40, 2, "#e74c3c"); // second
+      drawCenter();
     }
 
     function drawClock(hoursLeft, minutesLeft, secondsLeft) {
       ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
-
-      // Draw clock face
-      ctx.beginPath();
-      ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      ctx.strokeStyle = "#ccc";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // Draw ticks
-      for (let i = 0; i < 60; i++) {
-        const angle = (i * Math.PI) / 30;
-        const inner = radius - 10;
-        const outer = i % 5 === 0 ? radius - 20 : radius - 15;
-        ctx.beginPath();
-        ctx.moveTo(inner * Math.cos(angle), inner * Math.sin(angle));
-        ctx.lineTo(outer * Math.cos(angle), outer * Math.sin(angle));
-        ctx.strokeStyle = "#888";
-        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
-        ctx.stroke();
-      }
-
-      // Convert time left into angles (as if it's a 12-hour countdown clock)
-      const totalSeconds = hoursLeft * 3600 + minutesLeft * 60 + secondsLeft;
+      drawFace();
 
       const hourAngle = ((hoursLeft + minutesLeft / 60) * Math.PI) / 6;
       const minuteAngle = ((minutesLeft + secondsLeft / 60) * Math.PI) / 30;
       const secondAngle = (secondsLeft * Math.PI) / 30;
 
-      // Hour hand
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 80) * Math.cos(hourAngle - Math.PI / 2),
-        (radius - 80) * Math.sin(hourAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#2c3e50";
-      ctx.lineWidth = 6;
-      ctx.stroke();
+      drawHand(hourAngle, radius - 80, 6, "#2c3e50");
+      drawHand(minuteAngle, radius - 60, 4, "#2980b9");
+      drawHand(secondAngle, radius - 40, 2, "#e74c3c");
+      drawCenter();
+    }
 
-      // Minute hand
+    function drawFace() {
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 60) * Math.cos(minuteAngle - Math.PI / 2),
-        (radius - 60) * Math.sin(minuteAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#2980b9";
+      ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.strokeStyle = "#ccc";
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Second hand
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * Math.PI) / 30;
+        const inner = radius - 10;
+        const outer = i % 5 === 0 ? radius - 20 : radius - 15;
+        ctx.beginPath();
+        ctx.moveTo(inner * Math.cos(angle), inner * Math.sin(angle));
+        ctx.lineTo(outer * Math.cos(angle), outer * Math.sin(angle));
+        ctx.strokeStyle = "#888";
+        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
+        ctx.stroke();
+      }
+    }
+
+    function drawHand(angle, length, width, color) {
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(
-        (radius - 40) * Math.cos(secondAngle - Math.PI / 2),
-        (radius - 40) * Math.sin(secondAngle - Math.PI / 2)
-      );
-      ctx.strokeStyle = "#e74c3c";
-      ctx.lineWidth = 2;
+      ctx.lineTo(length * Math.cos(angle - Math.PI / 2), length * Math.sin(angle - Math.PI / 2));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
       ctx.stroke();
+    }
 
-      // Center dot
+    function drawCenter() {
       ctx.beginPath();
       ctx.arc(0, 0, 5, 0, 2 * Math.PI);
       ctx.fillStyle = "#333";
@@ -220,28 +147,15 @@
 
     function updateCountdown() {
       const now = new Date().getTime();
+      const remaining = targetDate - now;
 
-      if (now < startWindow) {
-        canvas.style.display = "none";
-        messageEl.textContent = "Countdown begins at 2:25 AM on May 2, 2025";
-        countdownText.textContent = "";
-        infoText.textContent = "Clock will start at 2:25 AM";
-        return;
-      }
-
-      if (now >= targetDate) {
-        canvas.style.display = "none";
-        messageEl.textContent = "Arrived!";
-        countdownText.textContent = "";
+      if (remaining <= 0) {
+        countdownText.textContent = "Arrived!";
         infoText.textContent = "";
+        messageEl.textContent = "";
         clearInterval(timer);
         return;
       }
-
-      canvas.style.display = "block";
-      messageEl.textContent = "Time remaining:";
-
-      const remaining = targetDate - now;
 
       const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
@@ -250,8 +164,10 @@
       countdownText.textContent = `${hours}h ${minutes}m ${seconds}s`;
 
       if (now >= startWindow) {
+        infoText.textContent = "";
         drawClock(hours, minutes, seconds);
       } else {
+        infoText.textContent = "Clock will start at 2:25 AM";
         drawStaticClock();
       }
     }
