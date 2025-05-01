@@ -1,41 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Countdown to Luton Arrival</title>
   <style>
     body {
       background-color: #f0f4f8;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 2rem;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      padding: 2rem;
       text-align: center;
+      box-sizing: border-box;
     }
+
     h1 {
       font-size: 2rem;
-      margin-bottom: 0.5rem;
       color: #2c3e50;
+      margin-bottom: 0.3rem;
     }
+
     h2 {
-      font-size: 1.1rem;
-      margin-bottom: 2rem;
+      font-size: 1rem;
       color: #34495e;
+      margin-bottom: 2rem;
     }
+
     canvas {
-      background: #fff;
-      border: 8px solid #2c3e50;
+      background-color: white;
       border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: none;
     }
-    .message {
-      font-size: 1.5rem;
-      margin-top: 1.5rem;
+
+    .message, .countdown-text {
+      font-size: 1.2rem;
       color: #e74c3c;
+      font-weight: bold;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 480px) {
+      canvas {
+        width: 220px !important;
+        height: 220px !important;
+      }
     }
   </style>
 </head>
@@ -43,95 +54,127 @@
   <h1>Countdown to Arrival at Luton Airport</h1>
   <h2>Thursday, 2nd May 2025 at 2:24:47 PM</h2>
   <canvas id="clock" width="300" height="300"></canvas>
-  <div class="message" id="message"></div>
+  <div class="message" id="message">Loading...</div>
+  <div class="countdown-text" id="countdownText"></div>
 
   <script>
-    const canvas = document.getElementById('clock');
-    const ctx = canvas.getContext('2d');
-    const message = document.getElementById('message');
-    const radius = canvas.height / 2;
+    const canvas = document.getElementById("clock");
+    const ctx = canvas.getContext("2d");
+    const radius = canvas.width / 2;
     ctx.translate(radius, radius);
 
-    const targetTime = new Date("May 2, 2025 14:24:47").getTime();
+    const targetDate = new Date("May 2, 2025 14:24:47").getTime();
+    const startWindow = targetDate - 12 * 60 * 60 * 1000; // 12 hours before
 
-    function drawClock(remainingTime) {
+    const messageEl = document.getElementById("message");
+    const countdownText = document.getElementById("countdownText");
+
+    function drawClock(hoursLeft, minutesLeft, secondsLeft) {
       ctx.clearRect(-radius, -radius, canvas.width, canvas.height);
 
-      // Draw face
+      // Draw clock face
       ctx.beginPath();
-      ctx.arc(0, 0, radius - 10, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffffff';
+      ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#fff";
       ctx.fill();
-      ctx.strokeStyle = '#2c3e50';
+      ctx.strokeStyle = "#ccc";
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Hour marks
-      for (let num = 1; num <= 12; num++) {
-        const ang = num * Math.PI / 6;
-        ctx.rotate(ang);
-        ctx.translate(0, -radius * 0.85);
-        ctx.rotate(-ang);
-        ctx.fillStyle = "#2c3e50";
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(num.toString(), 0, 0);
-        ctx.rotate(ang);
-        ctx.translate(0, radius * 0.85);
-        ctx.rotate(-ang);
+      // Draw ticks
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * Math.PI) / 30;
+        const inner = radius - 10;
+        const outer = i % 5 === 0 ? radius - 20 : radius - 15;
+        ctx.beginPath();
+        ctx.moveTo(inner * Math.cos(angle), inner * Math.sin(angle));
+        ctx.lineTo(outer * Math.cos(angle), outer * Math.sin(angle));
+        ctx.strokeStyle = "#888";
+        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
+        ctx.stroke();
       }
 
-      // Total seconds remaining
-      const totalSeconds = Math.floor(remainingTime / 1000);
-      const totalHours = Math.floor(totalSeconds / 3600);
-      const totalMinutes = Math.floor((totalSeconds % 3600) / 60);
-      const totalSecs = totalSeconds % 60;
+      // Convert time left into angles (as if it's a 12-hour countdown clock)
+      const totalSeconds = hoursLeft * 3600 + minutesLeft * 60 + secondsLeft;
 
-      // Angle per unit (scaled to 12-hour clock)
-      const maxDuration = targetTime - new Date().getTime();
-      const progress = Math.max(remainingTime / maxDuration, 0);
-
-      const hourAngle = 2 * Math.PI * progress;
-      const minuteAngle = hourAngle * 12;
-      const secondAngle = minuteAngle * 60;
+      const hourAngle = ((hoursLeft + minutesLeft / 60) * Math.PI) / 6;
+      const minuteAngle = ((minutesLeft + secondsLeft / 60) * Math.PI) / 30;
+      const secondAngle = (secondsLeft * Math.PI) / 30;
 
       // Hour hand
-      drawHand(hourAngle, radius * 0.5, 6, "#e74c3c");
-      // Minute hand
-      drawHand(minuteAngle, radius * 0.7, 4, "#3498db");
-      // Second hand
-      drawHand(secondAngle, radius * 0.9, 2, "#2ecc71");
-    }
-
-    function drawHand(pos, length, width, color) {
       ctx.beginPath();
-      ctx.lineWidth = width;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = color;
       ctx.moveTo(0, 0);
-      ctx.rotate(pos);
-      ctx.lineTo(0, -length);
+      ctx.lineTo(
+        (radius - 80) * Math.cos(hourAngle - Math.PI / 2),
+        (radius - 80) * Math.sin(hourAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#2c3e50";
+      ctx.lineWidth = 6;
       ctx.stroke();
-      ctx.rotate(-pos);
+
+      // Minute hand
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(
+        (radius - 60) * Math.cos(minuteAngle - Math.PI / 2),
+        (radius - 60) * Math.sin(minuteAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#2980b9";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Second hand
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(
+        (radius - 40) * Math.cos(secondAngle - Math.PI / 2),
+        (radius - 40) * Math.sin(secondAngle - Math.PI / 2)
+      );
+      ctx.strokeStyle = "#e74c3c";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Center
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#333";
+      ctx.fill();
     }
 
-    function update() {
+    function updateCountdown() {
       const now = new Date().getTime();
-      const remaining = targetTime - now;
 
-      if (remaining <= 0) {
-        drawClock(0);
-        message.textContent = "Arrived!";
-        clearInterval(tick);
+      if (now < startWindow) {
+        canvas.style.display = "none";
+        messageEl.textContent = "Countdown begins at 2:25 AM on May 2, 2025";
+        countdownText.textContent = "";
         return;
       }
 
-      drawClock(remaining);
+      if (now >= targetDate) {
+        canvas.style.display = "none";
+        messageEl.textContent = "Arrived!";
+        countdownText.textContent = "";
+        clearInterval(timer);
+        return;
+      }
+
+      canvas.style.display = "block";
+      messageEl.textContent = "Time remaining:";
+
+      const remaining = targetDate - now;
+
+      const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+      countdownText.textContent = `${hours}h ${minutes}m ${seconds}s`;
+
+      drawClock(hours, minutes, seconds);
     }
 
-    const tick = setInterval(update, 1000);
-    update(); // Initial draw
+    const timer = setInterval(updateCountdown, 1000);
+    updateCountdown();
   </script>
 </body>
 </html>
